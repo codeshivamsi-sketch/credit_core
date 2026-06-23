@@ -4,6 +4,8 @@ from models import LoanApplication, LoanStatus
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from worker import run_credit_check, celery_app
+from celery.result import AsyncResult
 
 router = APIRouter()
 
@@ -62,4 +64,17 @@ async def submit_application(app_id: str, db: AsyncSession = Depends(get_db)):
     application.status = LoanStatus.SUBMITTED
     await db.commit()
     await db.refresh(application)
-    return application
+
+    # Fire background job - don't wait for it
+    task = run_credit_check.delay(str(application.id), application.customer_id)
+
+    return {"application": application, "credit_check_task_id": task.id}
+
+@router.get("/tasks/{task_id}")
+def get_task_result(task_id: str):
+    result = AsyncResult(task_id, app=celery_app)
+    return {
+        "task_id": task_id,
+        "status": result.status,
+        "result": result.result
+    }

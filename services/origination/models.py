@@ -17,6 +17,6 @@ class LoanApplication(Base):
     customer_id: Mapped[str] = mapped_column(String, nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     purpose: Mapped[str] = mapped_column(String, nullable=False)
-    status: Mapped[LoanStatus] = mapped_column(SAEnum(LoanStatus), default=LoanStatus.DRAFT),
+    status: Mapped[LoanStatus] = mapped_column(SAEnum(LoanStatus), default=LoanStatus.DRAFT, nullable=False)
     idempotency_key: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
